@@ -22,3 +22,8 @@ npm start
 ## Docker run
 
 See `README-Docker.md` for full Docker + ZimaOS instructions.
+
+
+## ZimaOS App Install
+
+For CasaOS/ZimaOS custom app installation steps, see `README-ZimaOS-App.md`.
