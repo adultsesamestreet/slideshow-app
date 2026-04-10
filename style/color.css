@@ -1,0 +1,17 @@
+@charset "utf-8";
+/* CSS Document */
+root{
+	--neon-pink: #f11cb0;
+	--pink-01: #1beaa5;
+	--pink-02: #fb64c3;
+	--red: #db193b;
+	--neon-light-blue: #49c1f0;
+	--blue: #3389df;
+	--baby-blue: #74d7ff;
+	--bright-blue: #43e4f9;
+	--sky-blue: #43bff9;
+	--teal: #74d7ff;
+	--yellow: #f1b807;
+	--neon-green: #1beaa5;
+	--purple: #b034b9;
+}

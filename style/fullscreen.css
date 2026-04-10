@@ -1,0 +1,48 @@
+/* fullscreen.css */
+/* Specific styles for fullscreen slideshows */
+/* This file extends slideshow-common.css with fullscreen-specific styles */
+
+/* Import common styles */
+@import url('slideshow-common.css');
+
+/* Fullscreen-specific overrides and additions */
+/* Best suited for landscape images or where vertical space is used on vertical monitor */
+
+/* Characteristics:
+- Fullscreen slideshow
+- Single image at a time
+- Single image covers the viewport
+- Tall images are scaled to fit
+- Square images are scaled to cover the viewport
+- Navigation areas are hidden by default
+- Gear icon and settings panel are displayed
+- Settings panel is hidden by default
+*/
+
+/* Fullscreen-specific image handling */
+#slideshow img {
+  /* Override common styles for fullscreen behavior */
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Fullscreen-specific container adjustments */
+#slideshow {
+  /* Ensure full viewport coverage */
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Fullscreen-specific navigation behavior */
+.nav-area {
+  /* Ensure navigation areas work properly in fullscreen */
+  pointer-events: auto;
+}
+
+/* Fullscreen-specific settings panel positioning */
+#settingsPanel {
+  /* Ensure settings panel is properly positioned in fullscreen */
+  position: fixed;
+  top: 50px;
+  right: 10px;
+}

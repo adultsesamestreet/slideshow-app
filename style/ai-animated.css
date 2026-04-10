@@ -1,0 +1,132 @@
+/* ai-animated.css */
+/* Specific styles for AI animated content (ai-animated.html) */
+/* Characteristics:
+- Fullscreen slideshow
+- 3 videos side-by-side
+- Main video is centred and scaled to fit
+- Navigation areas are hidden by default
+- Gear icon and settings panel are displayed
+- Settings panel is hidden by default
+*/
+
+  /* Fullscreen slideshow container - 3 videos side-by-side */
+  #slideshow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    position: relative;
+  }
+
+  /* Video containers for layered transitions */
+  .video-container {
+    position: relative;
+    height: 90vh;
+    width: calc(90vh * 832 / 1248); /* Maintain 832:1248 aspect ratio */
+    max-width: 30vw; /* Fallback to ensure three videos fit */
+    overflow: hidden;
+    /*box-shadow: 0 0px 30px rgba(255, 255, 255, 0.3);*/
+  }
+
+  .video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: opacity 2s ease-in-out;
+    opacity: 0;
+    object-fit: cover;
+  }
+
+  .video-container video.active {
+    opacity: 1;
+  }
+
+  /* Position containers in fixed slots */
+  .video-container[data-position="0"] {
+    order: 1;
+  }
+  .video-container[data-position="1"] {
+    order: 2;
+  }
+  .video-container[data-position="2"] {
+    order: 3;
+  }
+
+  /* Blurred background pseudo-element */
+  #slideshow::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--current-video);
+    background-size: cover;
+    background-position: center;
+    filter: blur(20px);
+    transform: scale(1.1); /* To avoid gaps at the edges */
+    transition: background-image 2s ease-in-out;  
+    z-index: -1;
+  }
+
+/* Video-specific styles */
+#slideshow video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  transform: translateZ(0);
+}
+
+#slideshow video.active {
+  opacity: 1;
+}
+
+/* Ensure videos don't interfere with image styles */
+#slideshow img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  transform: translateZ(0);
+}
+
+#slideshow img.active {
+  opacity: 1;
+}
+
+/* Video controls styling */
+video::-webkit-media-controls {
+  display: none !important;
+}
+
+video::-webkit-media-controls-panel {
+  display: none !important;
+}
+
+video::-webkit-media-controls-play-button {
+  display: none !important;
+}
+
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+}
+
+/* Ensure smooth transitions between video and image content */
+#slideshow * {
+  transition: opacity 1s ease-in-out;
+}

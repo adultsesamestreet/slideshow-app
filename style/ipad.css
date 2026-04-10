@@ -1,0 +1,126 @@
+ /* ipad.css */
+ /* Characteristics:
+  - Fullscreen slideshow
+  - Single image at a time
+  - Blurred background of that image
+  - Main image is centred and scaled to fit
+  - Navigation areas are hidden by default
+  - Gear icon and settings panel are displayed
+  - Settings panel is hidden by default
+  - Settings panel is displayed when the gear icon is clicked
+  - Settings panel is hidden when the close button is clicked
+  - Settings panel is displayed when the apply settings button is clicked
+  - Settings panel is hidden when the close button is clicked
+ /* Reset margins and ensure full viewport usage */
+ html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+  }
+  /* Fullscreen slideshow container */
+  #slideshow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /* Set up a custom property for the current image URL */
+    --current-image: url('');
+  }
+  /* Blurred background pseudo-element */
+  #slideshow::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--current-image);
+    background-size: cover;
+    background-position: center;
+    filter: blur(20px);
+    transform: scale(1.1); /* To avoid gaps at the edges */
+	transition: opacity 1s ease-in-out;  
+    z-index: -1;
+  }
+  /* Main image styling: use object-fit contain to keep it centred without stretching */
+  #slideshow img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateZ(0); /* centre and enable GPU acceleration */
+    /* max-width: 100%;
+    max-height: 100%;	
+	object-fit: contain;  This keeps it centered */
+	height: 100vh; /* full viewport height */
+ 	width: auto;   /* maintain aspect ratio */
+	max-width: 100%;  
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    z-index: 1;
+  }
+  #slideshow img.active {
+    opacity: 1;
+  }
+  /* Navigation areas (hidden by default) */
+  .nav-area {
+    position: fixed;
+    top: 0;
+    height: 100%;
+    z-index: 1000;
+  }
+  #nav-left {
+    left: 0;
+    width: 20%;
+  }
+  #nav-right {
+    right: 0;
+    width: 20%;
+  }
+  /* Gear icon and settings panel */
+  #gearIcon {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.7;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border-radius: 4px;
+    padding: 5px;
+  }
+  #gearIcon:hover {
+    opacity: 1;
+  }
+  #settingsPanel {
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 15px;
+    border-radius: 4px;
+    z-index: 2000;
+    display: none;
+  }
+  #settingsPanel label {
+    display: block;
+    margin-bottom: 10px;
+  }
+  #settingsPanel input {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+    box-sizing: border-box;
+  }
+  #settingsPanel button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
