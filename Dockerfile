@@ -12,11 +12,11 @@ RUN npm ci --only=production
 
 # Copy the website files (excluding images directory)
 COPY *.html ./
-# COPY *.css ./
 COPY *.js ./
 COPY icons/ ./icons/
 COPY style/ ./style/
 COPY manifest.json ./
+COPY slideshow.config.json ./
 
 # Create the images directory structure (will be mounted from host)
 RUN mkdir -p images/landscape \
@@ -32,6 +32,7 @@ RUN mkdir -p images/landscape \
     && mkdir -p images/sketch-art \
     && mkdir -p images/home \
     && mkdir -p images/worship \
+    && mkdir -p images/animated-vertical \
     && mkdir -p images/diaper-training
 
 # Expose the port the app runs on

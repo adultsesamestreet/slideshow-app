@@ -1,228 +1,82 @@
-# Slideshow Website - Docker Setup Guide
+# Slideshow Website - Docker Setup Guide (including ZimaOS)
 
-This guide will help you set up and run the slideshow website using Docker, even if you're new to Docker.
+This app is now configurable so you do not need to edit `server.js` whenever image paths change.
 
-## What This Does
+## What changed
 
-The Docker container runs your slideshow website and allows you to point the `images` directory to any location on your computer. This means:
-- You can keep your images on your local drive
-- The website will automatically see any new images you add
-- You don't need to rebuild the container when adding new images
-- Multiple people can use the same container with different image collections
+- `server.js` now reads settings from `slideshow.config.json`.
+- You can override runtime values with environment variables (`PORT`, `IMAGES_ROOT`).
+- `docker-compose.yml` reads values from `docker-config.env` and mounts your host image folder.
 
-## Prerequisites
+## Key configuration files
 
-1. **Install Docker Desktop** (Windows/Mac) or Docker Engine (Linux)
-   - Windows/Mac: Download from [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-   - Linux: Follow instructions at [Docker Engine](https://docs.docker.com/engine/install/)
+- `slideshow.config.json`: categories + allowed file extensions + defaults.
+- `docker-config.env`: deployment-time settings (ports, mount paths).
+- `docker-compose.yml`: wiring for container runtime.
 
-2. **Verify Docker is working**
+## ZimaOS quick start
+
+1. Put your images on ZimaOS in a persistent folder, for example:
+   - `/DATA/Media/slideshow-images`
+2. Keep category subfolders inside that path:
+   - `landscape`, `portrait`, `square`, `ai-landscape`, `ai-portrait`, `ai-square`, `ai-animated`, `animated-vertical`, `ipad`, `iphone`, `tushy`, `sketch-art`, `home`, `worship`, `diaper-training`.
+3. Update `docker-config.env`:
+   ```env
+   IMAGES_PATH=/DATA/Media/slideshow-images
+   HOST_PORT=3000
+   PORT=3000
+   IMAGES_ROOT=/app/images
+   ```
+4. Start the stack:
    ```bash
-   docker --version
-   docker-compose --version
+   docker compose up -d --build
    ```
+5. Open `http://<your-zimaos-ip>:3000`.
 
-## Quick Start (Recommended)
+## Customizing categories (no code changes required)
 
-### Step 1: Prepare Your Images Directory
+Edit `slideshow.config.json`:
 
-1. **Create a folder** anywhere on your computer to store your images
-   - Example: `C:\MySlideshowImages` (Windows) or `/home/user/slideshow-images` (Linux/Mac)
-   
-2. **Copy your images** into this folder, maintaining the same structure:
-   ```
-   MySlideshowImages/
-   ├── landscape/
-   ├── portrait/
-   ├── square/
-   ├── ai-landscape/
-   ├── ai-portrait/
-   ├── ai-square/
-   ├── ai-animated/
-   ├── ipad/
-   ├── iphone/
-   ├── tushy/
-   ├── sketch-art/
-   ├── home/
-   ├── worship/
-   └── diaper-training/
-   ```
+- Add/remove category names in `categories`.
+- Update `imageExtensions` if you want to allow more file types.
 
-### Step 2: Update the Docker Compose File
+Then restart:
 
-1. **Open** `docker-compose.yml` in a text editor
-2. **Change this line**:
-   ```yaml
-   - ./images:/app/images:ro
-   ```
-   **To point to your images folder**:
-   
-   **Windows example:**
-   ```yaml
-   - C:\MySlideshowImages:/app/images:ro
-   ```
-   
-   **Linux/Mac example:**
-   ```yaml
-   - /home/user/slideshow-images:/app/images:ro
-   ```
-
-### Step 3: Build and Run
-
-1. **Open a terminal/command prompt** in the folder containing your website files
-2. **Build and start the container**:
-   ```bash
-   docker-compose up --build
-   ```
-3. **Wait for the build to complete** (first time takes a few minutes)
-4. **Open your browser** and go to: `http://localhost:3000`
-
-### Step 4: Stop the Container
-
-When you're done:
 ```bash
-docker-compose down
+docker compose up -d --build
 ```
-
-## Alternative: Using Docker Commands Directly
-
-If you prefer not to use docker-compose:
-
-### Build the Image
-```bash
-docker build -t slideshow-website .
-```
-
-### Run the Container
-```bash
-docker run -d \
-  --name slideshow-website \
-  -p 3000:3000 \
-  -v "C:\MySlideshowImages:/app/images:ro" \
-  slideshow-website
-```
-
-**Replace** `C:\MySlideshowImages` with your actual images folder path.
 
 ## Troubleshooting
 
-### Port Already in Use
-If you get an error about port 3000 being in use:
-1. **Change the port** in `docker-compose.yml`:
-   ```yaml
-   ports:
-     - "8080:3000"  # Now accessible at http://localhost:8080
-   ```
+### Health check keeps failing
 
-### Permission Denied (Linux/Mac)
-If you get permission errors:
-1. **Check folder permissions**:
-   ```bash
-   ls -la /path/to/your/images
-   ```
-2. **Fix permissions** if needed:
-   ```bash
-   chmod 755 /path/to/your/images
-   ```
+- Ensure `PORT` in `docker-config.env` matches the container port you want the app to listen on.
+- Ensure `HOST_PORT` is not already in use.
 
-### Images Not Showing
-1. **Check the volume mount** in docker-compose.yml
-2. **Verify the folder structure** matches what the website expects
-3. **Check container logs**:
-   ```bash
-   docker-compose logs slideshow-website
-   ```
+### Images are missing
 
-### Container Won't Start
-1. **Check if Docker is running**
-2. **Verify the images folder path** exists
-3. **Check the logs**:
-   ```bash
-   docker-compose logs slideshow-website
-   ```
+- Confirm `IMAGES_PATH` exists on the host and includes category subfolders.
+- Confirm mount is present:
+  ```bash
+  docker inspect slideshow-website --format '{{ json .Mounts }}'
+  ```
 
-## Advanced Configuration
+### Permission issues on ZimaOS
 
-### Custom Port
-Change the port in `docker-compose.yml`:
-```yaml
-ports:
-  - "8080:3000"  # Host port : Container port
-```
+If your image folder is on a protected mount, ensure it can be read by the container runtime.
 
-### Auto-restart
-The container is already configured to restart automatically. To disable:
-```yaml
-restart: "no"
-```
-
-### Environment Variables
-Add custom environment variables:
-```yaml
-environment:
-  - NODE_ENV=production
-  - CUSTOM_VAR=value
-```
-
-## File Structure
-
-Your project should look like this:
-```
-your-website-folder/
-├── Dockerfile
-├── docker-compose.yml
-├── .dockerignore
-├── package.json
-├── server.js
-├── index.html
-├── [other HTML/CSS/JS files]
-└── README-Docker.md
-```
-
-## Updating the Website
-
-To update the website code:
-1. **Make your changes** to the HTML/CSS/JS files
-2. **Rebuild the container**:
-   ```bash
-   docker-compose up --build
-   ```
-
-**Note**: Your images will remain accessible since they're mounted as a volume.
-
-## Security Notes
-
-- The container runs as a non-root user for security
-- The images directory is mounted as read-only (`:ro`)
-- The container exposes only port 3000
-- Health checks ensure the service is running properly
-
-## Need Help?
-
-If you encounter issues:
-1. **Check the logs**: `docker-compose logs slideshow-website`
-2. **Verify Docker is running**: `docker info`
-3. **Check your images folder path** exists and has the right structure
-4. **Ensure no other service** is using port 3000
-
-## Example Commands Reference
+## Commands reference
 
 ```bash
-# Start the service
-docker-compose up -d
+# Start or rebuild
+docker compose up -d --build
 
-# View logs
-docker-compose logs -f slideshow-website
+# Logs
+docker compose logs -f slideshow-website
 
-# Stop the service
-docker-compose down
+# Stop
+docker compose down
 
-# Rebuild and start
-docker-compose up --build -d
-
-# Check container status
-docker-compose ps
-
-# Access container shell (for debugging)
-docker exec -it slideshow-website sh
+# Validate config quickly
+curl http://localhost:3000/api/landscape
 ```
