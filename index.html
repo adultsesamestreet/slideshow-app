@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Enable full-screen mode on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">	
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-512.png">	
+  <title>Slideshow Themes Home</title>
+  <style>
+    /* Basic reset */
+	root{
+	--neon-pink: #f11cb0;
+	--pink-01: #1beaa5;
+	--pink-02: #fb64c3;
+	--red: #db193b;
+	--neon-light-blue: #49c1f0;
+	--blue: #3389df;
+	--baby-blue: #74d7ff;
+	--bright-blue: #43e4f9;
+	--sky-blue: #22a8e6;
+	--teal: #74d7ff;
+	--yellow: #f1b807;
+	--neon-green: #1beaa5;
+	--purple: #ad60b3;
+	}  
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+    /* Full-page background image */
+    body {
+      background: url('background.jpg') no-repeat center center/cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Glass effect container for the buttons */
+    .glass-container {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      padding: 40px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .glass-container h1 {
+      margin-bottom: 20px;
+      color: #fff;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+    }
+    /* Button styles */
+    .theme-button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 5px;
+      font-size: 1.1em;
+      color: #333;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+    .theme-button:hover {
+      background: rgba(255, 255, 255, 1);
+    }
+    /* Container for the iframe overlay */
+    #iframeContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      z-index: 1000;
+      background: #fff;
+    }
+    /* The iframe itself */
+    #iframeContainer iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    /* Close button styling */
+    #closeButton {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 1100;
+      border-radius: 3px;
+      padding: 5px 10px;
+	  opacity: 0.3;	
+    } 
+	#closeButton:hover {
+	  opacity: 1;	
+    }   
+  </style>
+</head>
+<body>
+  <div class="glass-container">
+	  
+	   <!-- Main content with buttons -->
+  <div id="buttonsContainer">
+    <button class="theme-button" data-url="landscape.html">Landscape</button>
+    <button class="theme-button" data-url="portrait.html">Portrait</button>
+    <button class="theme-button" data-url="square.html">Square</button>
+    <button class="theme-button" data-url="ai-landscape.html">AI Landscape</button>
+    <button class="theme-button" data-url="ai-portrait.html">AI Portrait</button>
+    <button class="theme-button" data-url="ai-square.html">AI Square</button>
+    <button class="theme-button" data-url="ai-animated.html">AI Animated</button>
+    <button class="theme-button" data-url="ipad.html">iPad</button>
+    <button class="theme-button" data-url="iphone.html">iPhone</button>
+    <button class="theme-button" data-url="tushy.html">Tushy</button>
+    <button class="theme-button" data-url="sketch-art.html">Sketch Art</button>
+    <button class="theme-button" data-url="worship.html">Worship</button>
+    <button class="theme-button" data-url="diaper-training.html">Diaper Training</button>  
+    <button class="theme-button" data-url="animated-vertical.html">Animated Video</button>  
+    <!-- Add more buttons as needed -->
+  </div>
+</div>
+  <!-- Container for the dynamic iframe -->
+  <div id="iframeContainer">
+    <button id="closeButton">✕</button>
+    <!-- Iframe will be injected here -->
+  
+
+  <script>
+    const buttons = document.querySelectorAll('.theme-button');
+    const iframeContainer = document.getElementById('iframeContainer');
+    const closeButton = document.getElementById('closeButton');
+
+    // Function to load the iframe with the given URL
+    function loadIframe(url) {
+      iframeContainer.innerHTML = '<button id="closeButton">✕</button>' +
+                                  '<iframe src="' + url + '"></iframe>';
+      iframeContainer.style.display = 'block';
+      // Reattach close event handler after recreating the close button
+      document.getElementById('closeButton').addEventListener('click', () => {
+        iframeContainer.style.display = 'none';
+        iframeContainer.innerHTML = '';
+      });
+    }
+
+    // Attach click listeners to all buttons
+    buttons.forEach(button => {
+      button.addEventListener('click', function() {
+        const url = this.getAttribute('data-url');
+        loadIframe(url);
+      });
+    });
+  </script>
+	  
+	  
+    <h1>Select a Theme</h1>
+    <a class="theme-button" href="landscape.html">Landscape</a>
+    <a class="theme-button" href="portrait.html">Portrait</a>
+    <a class="theme-button" href="square.html">Square</a>
+    <a class="theme-button" href="ipad.html">iPad</a>
+    <a class="theme-button" href="iphone.html">iPhone</a>
+    <a class="theme-button" href="tushy.html">Tushy</a>
+    <a class="theme-button" href="sketch-art.html">Sketch Art</a>
+    <a class="theme-button" href="worship.html">Worship</a>
+    <a class="theme-button" href="diaper-training.html">Diaper Training</a>
+  </div>
+</body>
+</html>

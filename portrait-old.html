@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Enable full-screen mode on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">		
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portrait Slideshow</title>
+  <style>
+  /* Reset margins and ensure full viewport usage */
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+  }
+  /* Fullscreen slideshow container */
+  #slideshow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /* Set up a custom property for the current image URL */
+    --current-image: url('');
+  }
+  /* Blurred background pseudo-element */
+  #slideshow::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--current-image);
+    background-size: cover;
+    background-position: center;
+    filter: blur(20px);
+    transform: scale(1.1); /* To avoid gaps at the edges */
+	transition: opacity 1s ease-in-out;  
+    z-index: -1;
+  }
+  /* Main image styling: use object-fit contain to keep it centred without stretching */
+  #slideshow img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateZ(0); /* centre and enable GPU acceleration */
+    /* max-width: 100%;
+    max-height: 100%;	
+	object-fit: contain;  This keeps it centered */
+	height: 100vh; /* full viewport height */
+ 	width: auto;   /* maintain aspect ratio */
+	max-width: 100%;  
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    z-index: 1;
+  }
+  #slideshow img.active {
+    opacity: 1;
+  }
+  /* Navigation areas (hidden by default) */
+  .nav-area {
+    position: fixed;
+    top: 0;
+    height: 100%;
+    z-index: 1000;
+  }
+  #nav-left {
+    left: 0;
+    width: 20%;
+  }
+  #nav-right {
+    right: 0;
+    width: 20%;
+  }
+  /* Gear icon and settings panel */
+  #gearIcon {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.7;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border-radius: 4px;
+    padding: 5px;
+  }
+  #gearIcon:hover {
+    opacity: 1;
+  }
+  #settingsPanel {
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 15px;
+    border-radius: 4px;
+    z-index: 2000;
+    display: none;
+  }
+  #settingsPanel label {
+    display: block;
+    margin-bottom: 10px;
+  }
+  #settingsPanel input {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+    box-sizing: border-box;
+  }
+  #settingsPanel button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <!-- Gear Icon & Settings Panel -->
+  <div id="gearIcon">&#9881;</div>
+  <div id="settingsPanel">
+    <label>
+      Display Duration (ms):
+      <input type="number" id="displayDuration" value="30000">
+    </label>
+    <label>
+      Transition Duration (ms):
+      <input type="number" id="transitionDuration" value="1000">
+    </label>
+    <button id="applySettings">Apply Settings</button>
+    <button id="closeSettings">Close</button>
+  </div>
+  
+  <!-- Slideshow Container -->
+  <div id="slideshow"></div>
+  
+  <!-- Hidden Navigation Areas -->
+  <div id="nav-left" class="nav-area"></div>
+  <div id="nav-right" class="nav-area"></div>
+  
+  <script>
+    let images = [];
+    let currentIndex = 0;
+    let timer;
+    let isTransitioning = false;
+    let displayDuration = parseInt(document.getElementById('displayDuration').value);
+    let transitionDuration = parseInt(document.getElementById('transitionDuration').value);
+    
+    const slideshow = document.getElementById('slideshow');
+    const gearIcon = document.getElementById('gearIcon');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const navLeft = document.getElementById('nav-left');
+    const navRight = document.getElementById('nav-right');
+    
+    // Fisher-Yates shuffle to randomize image order
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+    
+    // Load images from the server API endpoint (e.g., /api/images)
+    function loadImages() {
+      fetch('/api/portrait')
+        .then(response => response.json())
+        .then(data => {
+          images = shuffleArray(data);
+          if (images.length > 0) {
+            displayImage(currentIndex);
+            startTimer();
+          } else {
+            slideshow.innerHTML = "<p>No images found.</p>";
+          }
+        })
+        .catch(error => {
+          console.error('Error loading images:', error);
+          slideshow.innerHTML = "<p>Error loading images.</p>";
+        });
+    }
+    
+    // Display image at given index using fade transition.
+    // Only one new image is created, and after transition the previous image is removed.
+    function displayImage(index) {
+  if (isTransitioning) return;
+  isTransitioning = true;
+
+  const newImg = document.createElement('img');
+  newImg.src = images[index];
+  newImg.style.opacity = 0;
+  newImg.style.transform = 'translate(-50%, -50%) translateZ(0)'; // centre and enable GPU acceleration
+
+  slideshow.appendChild(newImg);
+
+  // Update the blurred background to the new image
+  slideshow.style.setProperty('--current-image', `url(${images[index]})`);
+
+  // Force reflow so that transition takes effect.
+  void newImg.offsetWidth;
+
+  newImg.style.opacity = 1;
+  newImg.classList.add('active');
+
+  // Fade out and then remove the previous image, if any.
+  const currentImg = slideshow.querySelector('img.active:not(:last-child)');
+  if (currentImg) {
+    currentImg.style.opacity = 0;
+    setTimeout(() => {
+      if (currentImg.parentElement === slideshow) {
+        slideshow.removeChild(currentImg);
+      }
+    }, transitionDuration);
+  }
+
+  // Update the current index and reset transition flag after the transition.
+  setTimeout(() => {
+    isTransitioning = false;
+  }, transitionDuration);
+
+  currentIndex = index;
+}
+    
+    // Navigate to next image.
+    function nextImage() {
+      let newIndex = (currentIndex + 1) % images.length;
+      displayImage(newIndex);
+      resetTimer();
+    }
+    
+    // Navigate to previous image.
+    function prevImage() {
+      let newIndex = (currentIndex - 1 + images.length) % images.length;
+      displayImage(newIndex);
+      resetTimer();
+    }
+    
+    // Timer functions for auto-advance.
+    function startTimer() {
+      clearTimeout(timer);
+      timer = setTimeout(nextImage, displayDuration);
+    }
+    
+    function resetTimer() {
+      clearTimeout(timer);
+      startTimer();
+    }
+    
+    // Navigation event listeners for left/right hidden areas.
+    navLeft.addEventListener('click', (e) => {
+      e.stopPropagation();
+      prevImage();
+    });
+    navRight.addEventListener('click', (e) => {
+      e.stopPropagation();
+      nextImage();
+    });
+    
+    // Also, clicking on the slideshow container (center 60% does nothing).
+    slideshow.addEventListener('click', (e) => {
+      const x = e.clientX;
+      const width = window.innerWidth;
+      if (x < width * 0.2) {
+        prevImage();
+      } else if (x > width * 0.8) {
+        nextImage();
+      }
+    });
+    
+    // Settings panel toggling.
+    gearIcon.addEventListener('click', (e) => {
+      settingsPanel.style.display = (settingsPanel.style.display === 'none' || settingsPanel.style.display === '') ? 'block' : 'none';
+      e.stopPropagation();
+    });
+    document.getElementById('closeSettings').addEventListener('click', (e) => {
+      settingsPanel.style.display = 'none';
+      e.stopPropagation();
+    });
+    document.getElementById('applySettings').addEventListener('click', (e) => {
+      displayDuration = parseInt(document.getElementById('displayDuration').value);
+      transitionDuration = parseInt(document.getElementById('transitionDuration').value);
+      settingsPanel.style.display = 'none';
+      resetTimer();
+      e.stopPropagation();
+    });
+    
+    loadImages();
+  </script>
+</body>
+</html>

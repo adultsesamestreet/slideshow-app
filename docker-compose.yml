@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  slideshow-website:
+    build: .
+    container_name: slideshow-website
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    volumes:
+      # Mount the images directory from the host to the container
+      # Change IMAGES_PATH in docker-config.env to point to your images directory
+      # placeholder: - ${IMAGES_PATH:-./images}:/app/images:ro
+      - ${IMAGES_PATH:-./images}:/app/images:ro
+    restart: ${RESTART_POLICY:-unless-stopped}
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

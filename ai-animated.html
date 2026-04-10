@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Enable full-screen mode on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">		
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portrait Video Slideshow</title>
+  <style>
+  /* Reset margins and ensure full viewport usage */
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+  }
+  
+  /* Fullscreen slideshow container - 3 videos side-by-side */
+  #slideshow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+    position: relative;
+  }
+
+  /* Video containers for layered transitions */
+  .video-container {
+    position: relative;
+    height: 90vh;
+    width: calc(90vh * 832 / 1248); /* Maintain 832:1248 aspect ratio */
+    max-width: 30vw; /* Fallback to ensure three videos fit */
+    overflow: hidden;
+    /*box-shadow: 0 0px 30px rgba(255, 255, 255, 0.3);*/
+  }
+
+  .video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: opacity 2s ease-in-out;
+    opacity: 0;
+    object-fit: cover;
+  }
+
+  .video-container video.active {
+    opacity: 1;
+  }
+
+  /* Position containers in fixed slots */
+  .video-container[data-position="0"] {
+    order: 1;
+  }
+  .video-container[data-position="1"] {
+    order: 2;
+  }
+  .video-container[data-position="2"] {
+    order: 3;
+  }
+
+  /* Blurred background pseudo-element */
+  #slideshow::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--current-video);
+    background-size: cover;
+    background-position: center;
+    filter: blur(20px);
+    transform: scale(1.1); /* To avoid gaps at the edges */
+    transition: background-image 2s ease-in-out;  
+    z-index: -1;
+  }
+
+  /* Navigation areas (hidden by default) */
+  .nav-area {
+    position: fixed;
+    top: 0;
+    height: 100%;
+    z-index: 1000;
+    cursor: pointer;
+  }
+  #nav-left {
+    left: 0;
+    width: 20%;
+  }
+  #nav-right {
+    right: 0;
+    width: 20%;
+  }
+  
+  /* Gear icon and settings panel */
+  #gearIcon {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.7;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border-radius: 4px;
+    padding: 5px;
+  }
+  #gearIcon:hover {
+    opacity: 1;
+  }
+  #settingsPanel {
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 15px;
+    border-radius: 4px;
+    z-index: 2000;
+    display: none;
+  }
+  #settingsPanel label {
+    display: block;
+    margin-bottom: 10px;
+  }
+  #settingsPanel input {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+    box-sizing: border-box;
+  }
+  #settingsPanel button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <!-- Gear Icon & Settings Panel -->
+  <div id="gearIcon">&#9881;</div>
+  <div id="settingsPanel">
+    <label>
+      Min Display Duration (seconds):
+      <input type="number" id="minDuration" value="15" min="10" max="300">
+    </label>
+    <label>
+      Max Display Duration (seconds):
+      <input type="number" id="maxDuration" value="30" min="20" max="300">
+    </label>
+    <label>
+      Transition Duration (ms):
+      <input type="number" id="transitionDuration" value="2000" min="500" max="5000">
+    </label>
+    <label>
+      <input type="checkbox" id="muteVideos" checked> Mute Videos
+    </label>
+    <button id="applySettings">Apply Settings</button>
+    <button id="closeSettings">Close</button>
+  </div>
+  
+  <!-- Slideshow Container -->
+  <div id="slideshow"></div>
+  
+  <!-- Hidden Navigation Areas -->
+  <div id="nav-left" class="nav-area"></div>
+  <div id="nav-right" class="nav-area"></div>
+  
+  <script>
+    let videos = [];
+    let currentVideos = []; // Track currently displayed videos
+    let timers = []; // Individual timers for each video
+    let isTransitioning = false;
+    let minDuration = parseInt(document.getElementById('minDuration').value) * 1000;
+    let maxDuration = parseInt(document.getElementById('maxDuration').value) * 1000;
+    let transitionDuration = parseInt(document.getElementById('transitionDuration').value);
+    let muteVideos = document.getElementById('muteVideos').checked;
+    
+    const slideshow = document.getElementById('slideshow');
+    const gearIcon = document.getElementById('gearIcon');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const navLeft = document.getElementById('nav-left');
+    const navRight = document.getElementById('nav-right');
+    
+    // Fisher-Yates shuffle to randomize video order
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+    
+    // Get random duration between min and max
+    function getRandomDuration() {
+      return Math.random() * (maxDuration - minDuration) + minDuration;
+    }
+    
+    // Load videos from the server API endpoint
+    function loadVideos() {
+      console.log('Loading videos from /api/ai-animated...');
+      fetch('/api/ai-animated')
+        .then(response => {
+          console.log('Response status:', response.status);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Videos loaded:', data.length);
+          videos = shuffleArray(data);
+          if (videos.length >= 3) {
+            initializeSlideshow();
+          } else {
+            slideshow.innerHTML = "<p style='color: white; text-align: center; margin-top: 45vh;'>Need at least 3 videos for slideshow. Found: " + videos.length + "</p>";
+          }
+        })
+        .catch(error => {
+          console.error('Error loading videos:', error);
+          slideshow.innerHTML = "<p style='color: white; text-align: center; margin-top: 45vh;'>Error loading videos: " + error.message + "</p>";
+        });
+    }
+    
+    // Create a video element with proper settings
+    function createVideoElement(videoSrc) {
+      const video = document.createElement('video');
+      video.src = videoSrc;
+      video.loop = true;
+      video.muted = muteVideos;
+      video.autoplay = true;
+      video.playsInline = true; // Important for mobile devices
+      video.preload = 'metadata';
+      return video;
+    }
+    
+    // Initialize slideshow with three random videos
+    function initializeSlideshow() {
+      console.log('Initializing slideshow with', videos.length, 'videos');
+      
+      // Pick three random different videos
+      const shuffledVideos = shuffleArray(videos);
+      currentVideos = shuffledVideos.slice(0, 3);
+      
+      console.log('Selected initial videos:', currentVideos);
+      
+      // Create containers and videos
+      currentVideos.forEach((videoSrc, index) => {
+        console.log(`Creating video ${index}: ${videoSrc}`);
+        
+        // Create container
+        const container = document.createElement('div');
+        container.className = 'video-container';
+        container.dataset.position = index;
+        slideshow.appendChild(container);
+        
+        // Create video
+        const video = createVideoElement(videoSrc);
+        video.dataset.layer = 'base';
+        container.appendChild(video);
+        
+        // Wait for video to load before showing
+        video.addEventListener('loadeddata', () => {
+          console.log(`Video ${index} loaded successfully`);
+          video.classList.add('active');
+          video.play().catch(e => console.log('Autoplay prevented:', e));
+          
+          // Set background to the first loaded video (using poster frame)
+          if (index === 0) {
+            // Create a canvas to capture the first frame for background
+            captureVideoFrame(video, videoSrc);
+          }
+        });
+        
+        video.addEventListener('error', () => {
+          console.error(`Failed to load initial video ${index}: ${videoSrc}`);
+        });
+      });
+      
+      // Start timers after all videos have had a chance to load
+      setTimeout(() => {
+        console.log('Starting timers...');
+        for (let i = 0; i < 3; i++) {
+          startVideoTimer(i);
+        }
+      }, 3000); // Give videos time to load before starting timers
+    }
+    
+    // Capture a frame from video for background
+    function captureVideoFrame(video, videoSrc) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      const captureFrame = () => {
+        if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const dataURL = canvas.toDataURL();
+          slideshow.style.setProperty('--current-video', `url(${dataURL})`);
+          console.log('Set background from video:', videoSrc);
+        } else {
+          setTimeout(captureFrame, 100);
+        }
+      };
+      
+      captureFrame();
+    }
+    
+    // Start timer for a specific video position
+    function startVideoTimer(position) {
+      clearTimeout(timers[position]);
+      const duration = getRandomDuration();
+      
+      timers[position] = setTimeout(() => {
+        replaceVideo(position);
+      }, duration);
+    }
+    
+    // Replace video at specific position with a new random video
+    function replaceVideo(position) {
+      const container = slideshow.querySelector(`.video-container[data-position="${position}"]`);
+      if (!container) {
+        console.log(`No container found for position ${position}`);
+        return;
+      }
+      
+      const currentVideo = container.querySelector('video[data-layer="base"]');
+      if (!currentVideo) {
+        console.log(`No current video found for position ${position}`);
+        return;
+      }
+      
+      // Get a new random video that's not currently displayed
+      let newVideoSrc;
+      let attempts = 0;
+      do {
+        newVideoSrc = videos[Math.floor(Math.random() * videos.length)];
+        attempts++;
+      } while (currentVideos.includes(newVideoSrc) && attempts < 20);
+      
+      console.log(`Replacing video at position ${position} with ${newVideoSrc}`);
+      
+      // Update current videos array immediately
+      currentVideos[position] = newVideoSrc;
+      
+      // Create new video on top layer
+      const newVideo = createVideoElement(newVideoSrc);
+      newVideo.dataset.layer = 'top';
+      newVideo.style.opacity = '0';
+      newVideo.style.zIndex = '2'; // Ensure it's on top
+      container.appendChild(newVideo);
+      
+      // Wait for new video to load
+      newVideo.addEventListener('loadeddata', () => {
+        console.log(`New video loaded for position ${position}`);
+        
+        // Start playing the new video
+        newVideo.play().catch(e => console.log('Autoplay prevented:', e));
+        
+        // Fade in new video
+        newVideo.style.opacity = '1';
+        newVideo.classList.add('active');
+        
+        // Capture frame for background
+        captureVideoFrame(newVideo, newVideoSrc);
+        
+        // After transition completes, swap layers
+        setTimeout(() => {
+          // Stop and remove old video
+          currentVideo.pause();
+          container.removeChild(currentVideo);
+          
+          // Make new video the base layer
+          newVideo.dataset.layer = 'base';
+          newVideo.style.zIndex = '1';
+          
+          console.log(`Transition completed for position ${position}`);
+          
+          // Start next timer for this position
+          startVideoTimer(position);
+        }, transitionDuration);
+      });
+      
+      newVideo.addEventListener('error', () => {
+        console.error(`Failed to load video: ${newVideoSrc}`);
+        // Remove the failed video and try again
+        container.removeChild(newVideo);
+        setTimeout(() => {
+          startVideoTimer(position);
+        }, 1000);
+      });
+    }
+    
+    // Manual navigation - refresh all videos
+    function refreshAllVideos() {
+      // Clear all timers
+      timers.forEach(timer => clearTimeout(timer));
+      timers = [];
+      
+      // Get three new random videos
+      const shuffledVideos = shuffleArray(videos);
+      const newVideos = shuffledVideos.slice(0, 3);
+      
+      const containers = slideshow.querySelectorAll('.video-container');
+      
+      // Replace each video using the layered approach
+      containers.forEach((container, index) => {
+        if (newVideos[index]) {
+          const currentVideo = container.querySelector('video[data-layer="base"]');
+          const newVideoSrc = newVideos[index];
+          
+          // Update tracking
+          currentVideos[index] = newVideoSrc;
+          
+          // Create new video on top layer
+          const newVideo = createVideoElement(newVideoSrc);
+          newVideo.dataset.layer = 'top';
+          newVideo.style.opacity = '0';
+          newVideo.style.zIndex = '2';
+          container.appendChild(newVideo);
+          
+          newVideo.addEventListener('loadeddata', () => {
+            // Start playing
+            newVideo.play().catch(e => console.log('Autoplay prevented:', e));
+            
+            // Fade in new video
+            newVideo.style.opacity = '1';
+            newVideo.classList.add('active');
+            
+            // After transition, swap layers
+            setTimeout(() => {
+              if (currentVideo && currentVideo.parentElement === container) {
+                currentVideo.pause();
+                container.removeChild(currentVideo);
+              }
+              newVideo.dataset.layer = 'base';
+              newVideo.style.zIndex = '1';
+            }, transitionDuration);
+          });
+        }
+      });
+      
+      // Set background from the first new video
+      setTimeout(() => {
+        const firstVideo = containers[0]?.querySelector('video[data-layer="top"]');
+        if (firstVideo) {
+          captureVideoFrame(firstVideo, newVideos[0]);
+        }
+      }, 1000);
+      
+      // Start timers for all positions after transition completes
+      setTimeout(() => {
+        for (let i = 0; i < 3; i++) {
+          startVideoTimer(i);
+        }
+      }, transitionDuration + 100);
+    }
+    
+    // Navigation event listeners
+    navLeft.addEventListener('click', (e) => {
+      e.stopPropagation();
+      refreshAllVideos();
+    });
+    
+    navRight.addEventListener('click', (e) => {
+      e.stopPropagation();
+      refreshAllVideos();
+    });
+    
+    // Clicking on slideshow
+    slideshow.addEventListener('click', (e) => {
+      const x = e.clientX;
+      const width = window.innerWidth;
+      if (x < width * 0.2 || x > width * 0.8) {
+        refreshAllVideos();
+      }
+    });
+    
+    // Settings panel toggling
+    gearIcon.addEventListener('click', (e) => {
+      settingsPanel.style.display = (settingsPanel.style.display === 'none' || settingsPanel.style.display === '') ? 'block' : 'none';
+      e.stopPropagation();
+    });
+    
+    document.getElementById('closeSettings').addEventListener('click', (e) => {
+      settingsPanel.style.display = 'none';
+      e.stopPropagation();
+    });
+    
+    document.getElementById('applySettings').addEventListener('click', (e) => {
+      minDuration = parseInt(document.getElementById('minDuration').value) * 1000;
+      maxDuration = parseInt(document.getElementById('maxDuration').value) * 1000;
+      transitionDuration = parseInt(document.getElementById('transitionDuration').value);
+      muteVideos = document.getElementById('muteVideos').checked;
+      
+      // Update mute setting for all current videos
+      document.querySelectorAll('video').forEach(video => {
+        video.muted = muteVideos;
+      });
+      
+      // Update CSS transition duration
+      const style = document.createElement('style');
+      style.textContent = `
+        .video-container video { transition: opacity ${transitionDuration}ms ease-in-out; }
+        #slideshow::before { transition: background-image ${transitionDuration}ms ease-in-out; }
+      `;
+      document.head.appendChild(style);
+      
+      settingsPanel.style.display = 'none';
+      e.stopPropagation();
+    });
+    
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'ArrowLeft') {
+        e.preventDefault();
+        refreshAllVideos();
+      }
+    });
+    
+    // Initialize
+    loadVideos();
+  </script>
+</body>
+</html>

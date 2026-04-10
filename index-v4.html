@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Enable full-screen mode on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">	
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slideshow Themes Home</title>
+  <style>
+    /* Basic reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+    /* Full-page background image */
+    body {
+      background: url('background.jpg') no-repeat center center/cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Glass effect container for the buttons */
+    .glass-container {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      padding: 40px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .glass-container h1 {
+      margin-bottom: 20px;
+      color: #fff;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+    }
+    /* Button styles */
+    .theme-button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 5px;
+      font-size: 1.1em;
+      color: #333;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+    .theme-button:hover {
+      background: rgba(255, 255, 255, 1);
+    }
+  </style>
+</head>
+<body>
+  <div class="glass-container">
+    <h1>Select a Theme</h1>
+    <a class="theme-button" href="landscape.html">Landscape</a>
+    <a class="theme-button" href="portrait.html">Portrait</a>
+    <a class="theme-button" href="square.html">Square</a>
+    <a class="theme-button" href="ipad.html">iPad</a>
+    <a class="theme-button" href="iphone.html">iPhone</a>
+    <a class="theme-button" href="tushy.html">Tushy</a>
+    <a class="theme-button" href="sketch-art.html">Sketch Art</a>
+    <a class="theme-button" href="worship.html">Worship</a>
+    <a class="theme-button" href="diaper-training.html">Diaper Training</a>
+  </div>
+</body>
+</html>
