@@ -1,0 +1,28 @@
+{
+  "port": 3000,
+  "imagesDir": "images",
+  "categories": [
+    "landscape",
+    "portrait",
+    "square",
+    "ipad",
+    "iphone",
+    "tushy",
+    "sketch-art",
+    "worship",
+    "diaper-training",
+    "ai-landscape",
+    "ai-portrait",
+    "ai-square",
+    "ai-animated",
+    "animated-vertical",
+    "home"
+  ],
+  "imageExtensions": [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".mp4"
+  ]
+}
